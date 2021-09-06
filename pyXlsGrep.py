@@ -25,11 +25,15 @@ def search_xlsx(filename: str, fs: str) -> None:
     except PermissionError as err:
         print(f'{filename}が開けません。: {err.strerror}({err.errno})')
         return
+    nocrlf = False
     for sheetname in wb.sheetnames:
         sheet = wb[sheetname]
         for row in sheet.iter_rows():
             for cell in row:
                 if cell.value and in_value(fs, cell.value):
+                    if nocrlf is False:
+                        print('')   # 開業のみさせたい
+                        nocrlf = True
                     print(f'[{sheetname}]({cell.coordinate})={cell.value}')
     return
 
@@ -38,7 +42,7 @@ def find_xls(path: str, fs: str) -> None:
         for f in files:
             if re.match(FNMATCH, f):
                 fullpath = os.path.join(root, f)
-                print(f'searching: {fullpath}')
+                print(f'searching: {fullpath}', end='\r', flush=True)
                 search_xlsx(fullpath, fs)
 
 def option_parse() -> argparse.Namespace:
