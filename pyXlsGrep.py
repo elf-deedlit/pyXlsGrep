@@ -20,7 +20,7 @@ def in_value(fs: str, value: str) -> bool:
         value = repr(value)
     return fs.lower() in value.lower()
 
-def search_xlsx(filename: str, fs: str) -> None:
+def search_xlsx(filename: str, fs: str) -> bool:
     try:
         # https://openpyxl.readthedocs.io/en/stable/api/openpyxl.reader.excel.html?highlight=load_workbook
         wb = openpyxl.load_workbook(filename, read_only=True, data_only=True)
@@ -40,15 +40,23 @@ def search_xlsx(filename: str, fs: str) -> None:
                         print('')   # 開業のみさせたい
                         nocrlf = True
                     print(f'[{sheetname}]({cell.coordinate})={cell.value}')
-    return
+    return nocrlf
+
+def len_count(text: str) -> int:
+    # print出力時の文字数をカウントしたい
+    sjis = text.encode('cp932')
+    return len(sjis)
 
 def find_xls(path: str, fs: str) -> None:
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for f in files:
             if re.match(FNMATCH, f):
                 fullpath = os.path.join(root, f)
                 print(f'searching: {fullpath}', end='\r', flush=True)
-                search_xlsx(fullpath, fs)
+                crlf = search_xlsx(fullpath, fs)
+                if crlf is False:
+                    n = len_count(fullpath) + 11
+                    print(' '*n, end='\r', flush=True)
 
 def option_parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='エクセルファイルをgrepする')
