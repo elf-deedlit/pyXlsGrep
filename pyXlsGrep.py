@@ -7,6 +7,11 @@ import os
 import openpyxl
 from openpyxl.utils.exceptions import InvalidFileException
 
+# 条件付き書式が設定されていると出るメッセージを抑制する
+# UserWarning: Conditional Formatting extension is not supported and will be removed
+import warnings
+warnings.filterwarnings('ignore', 'Conditional Formatting.*', category=UserWarning)
+
 BASEPATH = os.path.dirname(os.path.abspath(__file__))
 FNMATCH = re.compile('(?s:.*\.xlsx?)$')
 
