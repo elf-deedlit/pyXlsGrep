@@ -70,7 +70,7 @@ def find_xls(path: str, fs: str) -> None:
         for f in files:
             if re.match(FNMATCH, f):
                 fullpath = os.path.join(root, f)
-                msg = column_cut_msg(f)
+                msg = column_cut_msg(fullpath)
                 print(f'{msg}', end='\r', flush=True)
                 crlf = search_xlsx(fullpath, fs)
                 if crlf is False:
