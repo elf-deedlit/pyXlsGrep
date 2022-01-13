@@ -5,6 +5,9 @@ import re
 import os
 # https://openpyxl.readthedocs.io/en/stable/
 import openpyxl
+import shutil
+import unicodedata
+
 from openpyxl.utils.exceptions import InvalidFileException
 
 # 条件付き書式が設定されていると出るメッセージを抑制する
@@ -13,7 +16,8 @@ import warnings
 warnings.filterwarnings('ignore', 'Conditional Formatting.*', category=UserWarning)
 
 BASEPATH = os.path.dirname(os.path.abspath(__file__))
-FNMATCH = re.compile('(?s:.*\.xlsx?)$')
+FNMATCH = re.compile('(?s:.*\.xls[xm]?)$')
+COLUMNS = shutil.get_terminal_size().columns - 1
 
 def in_value(fs: str, value: str) -> bool:
     if not isinstance(value, str):
@@ -37,26 +41,40 @@ def search_xlsx(filename: str, fs: str) -> bool:
             for cell in row:
                 if cell.value and in_value(fs, cell.value):
                     if nocrlf is False:
-                        print('')   # 開業のみさせたい
+                        print('')   # 改行のみさせたい
+                        print(f'find: {filename}')
                         nocrlf = True
                     print(f'[{sheetname}]({cell.coordinate})={cell.value}')
     return nocrlf
 
-def len_count(text: str) -> int:
-    # print出力時の文字数をカウントしたい
-    sjis = text.encode('cp932')
-    return len(sjis)
+def column_cut_msg(msg: str, width: int = COLUMNS) -> str:
+    # ターミナルの横幅まで文字列を切り詰める
+    # textwrapperは日本語に対応していない
+    msg = unicodedata.normalize('NFC', msg)
+    count = 0
+    rslt = []
+    for c in msg[::-1]:
+        if unicodedata.east_asian_width(c) in 'FWA':
+            count += 2
+        else:
+            count += 1
+        if count >= width:
+            rslt.reverse()
+            t = ''.join(rslt)
+            return '…' + t
+        rslt.append(c)
+    return msg
 
 def find_xls(path: str, fs: str) -> None:
     for root, _, files in os.walk(path):
         for f in files:
             if re.match(FNMATCH, f):
                 fullpath = os.path.join(root, f)
-                print(f'searching: {fullpath}', end='\r', flush=True)
+                msg = column_cut_msg(f)
+                print(f'{msg}', end='\r', flush=True)
                 crlf = search_xlsx(fullpath, fs)
                 if crlf is False:
-                    n = len_count(fullpath) + 11
-                    print(' '*n, end='\r', flush=True)
+                    print(' '*COLUMNS, end='\r', flush=True)
 
 def option_parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='エクセルファイルをgrepする')
